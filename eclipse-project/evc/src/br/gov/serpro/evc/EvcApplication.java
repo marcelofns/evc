@@ -92,8 +92,9 @@ public final class EvcApplication extends ApplicationAdapter implements IPending
 	 */
 	public boolean relay(String id, String action, String username){
 		String myId= null;
+		IConnection me = null;
 		try{
-			IConnection me = Red5.getConnectionLocal();
+			me = Red5.getConnectionLocal();
 			myId = (String) me.getClient().getAttribute(ATT_USER_ID);
 		}
 		catch(Exception e){
@@ -101,11 +102,22 @@ public final class EvcApplication extends ApplicationAdapter implements IPending
 		}
 		
 		IConnection user = getUser(id);
-		if(user != null && myId != null) {
+		
+		
+		if(user != null) {
 			IServiceCapableConnection service = (IServiceCapableConnection)user;
 			
 			service.invoke("onRelay", new Object[]{myId, action , username}, this);
 			return true;
+		}
+		else { // remote user not found
+			if(action.equals("invite")){
+				// send back reject as response
+				
+				IServiceCapableConnection service = (IServiceCapableConnection)me;
+				service.invoke("onRelay", new Object[]{id, "reject" , username}, this);
+				return true;
+			}
 		}
 		
 		return false;
